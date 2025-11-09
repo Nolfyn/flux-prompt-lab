@@ -1,7 +1,10 @@
 import os
 import json
 import requests
+from dotenv import load_dotenv
 from typing import List, Dict
+
+load_dotenv()
 
 LLM_API_URL = os.getenv("LLM_API_URL", "")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
@@ -22,19 +25,11 @@ def expand_prompt(
     idea: str, slider: int = 5, n_variants: int = 3
 ) -> List[Dict]:
     """Запрос к LLM для расширения идеи в несколько вариантов промптов."""
-    if not LLM_API_URL or not LLM_API_KEY:
-        return [
-            {
-                "variant": f"variant_{i + 1}",
-                "prompt": f"{idea} {{LORA_TOKEN}} -- {['concise', 'artistic', 'photo'][i % 3]}",
-                "negative_prompt": "",
-                "notes": "stub response for LLM",
-            }
-            for i in range(n_variants)
-        ]
+    temperature = slider_to_temp(slider)
     payload = {
+        "model": "deepseek/deepseek-chat-v3-0324:free",
         "prompt": f"Expand the following idea into {n_variants} different prompts: {idea}",
-        "temperature": slider_to_temp(slider),
+        "temperature": temperature,
         "max_tokens": 400,
     }
     headers = {
@@ -54,11 +49,6 @@ def expand_prompt(
 
 def choose_lora_via_llm(idea: str, loras: List[Dict]) -> Dict:
     """Выбор лучшего LORA через LLM на основе идеи."""
-    if not LLM_API_URL or not LLM_API_KEY:
-        return {
-            "selected_lora": loras[0]["id"],
-            "suggested_weight": loras[0].get("default_weight", 0.5),
-        }
     lora_list_text = "\n".join(
         [
             f"{lora['id']}: {lora.get('description', 'No description')}"
@@ -67,6 +57,7 @@ def choose_lora_via_llm(idea: str, loras: List[Dict]) -> Dict:
     )
     prompt = f'Given the idea: "{idea}", choose the best LORA from the following list:\n{lora_list_text}\nReturn a JSON with selected_lora and suggested_weight.'
     payload = {
+        "model": "deepseek/deepseek-chat-v3-0324:free",
         "prompt": prompt,
         "temperature": 0.2,
         "max_tokens": 150,

@@ -48,7 +48,6 @@ def generate_handler(idea: str, slider: int):
         labels.append(label)
         prompt_map[label] = final_prompt
         neg_map[label] = v["negative_prompt"]
-
     return (
         labels,
         prompt_map,
@@ -135,7 +134,6 @@ with gr.Blocks() as demo:
             weight_info,
         ],
     )
-
     variants_dropdown.change(
         fn=on_variant_select,
         inputs=[variants_dropdown, prompt_map_state, neg_map_state],
