@@ -24,9 +24,6 @@ def _ensure_table():
         name TEXT,
         prompt TEXT,
         negative_prompt TEXT,
-        lora_name TEXT,
-        lora_id TEXT,
-        lora_weight REAL,
         slider_value INTEGER,
         llm_input TEXT,
         llm_raw_response TEXT,
@@ -50,9 +47,6 @@ def save_prompt(record):
     name = record.get("name") or ""
     prompt = record.get("prompt") or ""
     negative = record.get("negative_prompt") or ""
-    lora_name = record.get("lora_name") or ""
-    lora_id = record.get("lora_id") or ""
-    lora_weight = record.get("lora_weight")
     slider = record.get("slider_value")
     llm_input = record.get("llm_input") or ""
     llm_raw = record.get("llm_raw_response") or ""
@@ -66,7 +60,7 @@ def save_prompt(record):
 
     sql = """
     INSERT OR REPLACE INTO saved_prompts
-    (id, name, prompt, negative_prompt, lora_name, lora_id, lora_weight,
+    (id, name, prompt, negative_prompt,
     slider_value, llm_input, llm_raw_response, tags, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
@@ -75,9 +69,6 @@ def save_prompt(record):
         name,
         prompt,
         negative,
-        lora_name,
-        lora_id,
-        lora_weight,
         slider,
         llm_input,
         llm_raw,
