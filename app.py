@@ -1,19 +1,7 @@
 import gradio as gr
 from typing import Dict
-from lora_store import load_loras
 import llm_adapter
-from selector import select_lora
 import storage
-
-LORAS = load_loras("loras.json")
-
-
-def _inject_lora_token(prompt_text: str, lora_id: str, weight: float) -> str:
-    """Вставляет токен LORA в текст промпта."""
-    token = f"<lora:{lora_id}:{weight}>"
-    if "{LORA_TOKEN}" in prompt_text:
-        return prompt_text.replace("{LORA_TOKEN}", token)
-    return f"{prompt_text} {token}"
 
 
 def generate_handler(idea: str, slider: int):
@@ -32,19 +20,12 @@ def generate_handler(idea: str, slider: int):
             }
         )
 
-    sel = select_lora(idea, LORAS, slider=slider, llm_fallback=True)
-    lora_id = sel.get("lora_id")
-    lora_name = sel.get("lora_name") or ""
-    weight = sel.get("weight") if sel.get("weight") is not None else ""
-
     labels = []
     prompt_map = {}
     neg_map = {}
     for v in processed:
         label = v["label"]
         final_prompt = v["prompt"]
-        if lora_id and weight != "":
-            final_prompt = _inject_lora_token(final_prompt, lora_id, weight)
         labels.append(label)
         prompt_map[label] = final_prompt
         neg_map[label] = v["negative_prompt"]
@@ -52,8 +33,6 @@ def generate_handler(idea: str, slider: int):
         labels,
         prompt_map,
         neg_map,
-        lora_name,
-        (weight if weight != "" else ""),
     )
 
 
@@ -65,15 +44,13 @@ def on_variant_select(selected_label: str, prompt_map: Dict, neg_map: Dict):
 
 
 def save_prompt_handler(
-    prompt_text: str, negative_prompt: str, lora_name: str, weight, name: str
+    prompt_text: str, negative_prompt: str, name: str
 ):
     """Сохраняет промпт через storage.save_prompt."""
     record = {
         "name": name or "untitled",
         "prompt": prompt_text,
         "negative_prompt": negative_prompt,
-        "lora_name": lora_name,
-        "weight": weight,
     }
     saved_id = storage.save_prompt(record)
     return f"Сохранено: {saved_id}"
@@ -81,7 +58,7 @@ def save_prompt_handler(
 
 # --- Gradio UI ---
 with gr.Blocks() as demo:
-    gr.Markdown("# Flux Prompt Lab — идея → промпт + LORA")
+    gr.Markdown("# Flux Prompt Lab — идея → промпт")
 
     with gr.Row():
         with gr.Column(scale=2):
@@ -114,7 +91,6 @@ with gr.Blocks() as demo:
             negative_editor = gr.Textbox(
                 label="Negative prompt (редактируемый)", lines=3
             )
-            lora_info = gr.Textbox(label="Выбранная LORA", interactive=False)
             weight_info = gr.Textbox(
                 label="Рекомендованный вес", interactive=False
             )
@@ -130,7 +106,6 @@ with gr.Blocks() as demo:
             variants_dropdown,
             prompt_map_state,
             neg_map_state,
-            lora_info,
             weight_info,
         ],
     )
@@ -145,7 +120,6 @@ with gr.Blocks() as demo:
         inputs=[
             prompt_editor,
             negative_editor,
-            lora_info,
             weight_info,
             save_name,
         ],
