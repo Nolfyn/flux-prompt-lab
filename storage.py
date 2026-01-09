@@ -23,7 +23,6 @@ def _ensure_table():
         id TEXT PRIMARY KEY,
         name TEXT,
         prompt TEXT,
-        negative_prompt TEXT,
         slider_value INTEGER,
         llm_input TEXT,
         llm_raw_response TEXT,
@@ -46,7 +45,6 @@ def save_prompt(record):
     rid = record.get("id") or str(uuid.uuid4())
     name = record.get("name") or ""
     prompt = record.get("prompt") or ""
-    negative = record.get("negative_prompt") or ""
     slider = record.get("slider_value")
     llm_input = record.get("llm_input") or ""
     llm_raw = record.get("llm_raw_response") or ""
@@ -60,15 +58,14 @@ def save_prompt(record):
 
     sql = """
     INSERT OR REPLACE INTO saved_prompts
-    (id, name, prompt, negative_prompt,
-    slider_value, llm_input, llm_raw_response, tags, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (id, name, prompt, slider_value, llm_input, llm_raw_response, tags,
+    created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """
     params = (
         rid,
         name,
         prompt,
-        negative,
         slider,
         llm_input,
         llm_raw,
