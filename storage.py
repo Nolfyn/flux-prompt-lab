@@ -36,7 +36,6 @@ def _ensure_table():
     conn.close()
 
 
-# Создаём таблицу при импорте модуля (MVP)
 _ensure_table()
 
 
