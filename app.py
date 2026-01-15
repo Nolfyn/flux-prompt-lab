@@ -110,15 +110,15 @@ def switch_language_handler(current_lang: str):
     t = TEXTS[new_lang]
     updates = {
         "title": gr.update(value=t["title"]),
-        "idea_label": gr.update(
-            label=t["idea_label"], placeholder=t["idea_placeholder"]
-        ),
+        "idea_label": gr.update(label=t["idea_label"], placeholder=t["idea_placeholder"]),
         "slider_label": gr.update(label=t["slider_label"]),
         "generate_label": gr.update(value=t["generate"]),
         "creative_label": gr.update(value=t["creative"]),
         "save_name_label": gr.update(label=t["save_name"], placeholder=""),
         "save_btn_label": gr.update(value=t["save_btn"]),
+        "extended_prompt_label": gr.update(label=t["extended_prompt"]),
         "saved_prompts_label": gr.update(label=t["saved_prompts"]),
+        "saved_prompts_title_label": gr.update(label=t["saved_prompts_title"]),
         "load_btn_label": gr.update(value=t["load_btn"]),
         "refresh_btn_label": gr.update(value=t["refresh_btn"]),
         "delete_btn_label": gr.update(value=t["delete_btn"]),
@@ -136,7 +136,9 @@ def switch_language_handler(current_lang: str):
         updates["creative_label"],
         updates["save_name_label"],
         updates["save_btn_label"],
+        updates["extended_prompt_label"],
         updates["saved_prompts_label"],
+        updates["saved_prompts_title_label"],
         updates["load_btn_label"],
         updates["refresh_btn_label"],
         updates["delete_btn_label"],
@@ -179,7 +181,7 @@ with gr.Blocks() as demo:
             save_btn = gr.Button(txt["save_btn"])
 
             # блок сохранённых записей
-            gr.Markdown("### " + txt["saved_prompts"])
+            gr.Markdown("### " + txt["saved_prompts_title"])
             saved_dropdown = gr.Dropdown(
                 label=txt["saved_prompts"], choices=[], interactive=True
             )
@@ -192,7 +194,7 @@ with gr.Blocks() as demo:
             lang_btn = gr.Button(txt["switch_lang"])
 
         with gr.Column(scale=3):
-            gr.Markdown("### Расширенный промпт")
+            gr.Markdown("### " + txt["extended_prompt"])
             prompt_editor = gr.Textbox(
                 label=txt["prompt_editor"], lines=8, elem_id="prompt_editor"
             )
