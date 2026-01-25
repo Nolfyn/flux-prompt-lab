@@ -1,5 +1,6 @@
 import os
 import requests
+import time
 from dotenv import load_dotenv
 from typing import List, Dict
 
@@ -7,6 +8,10 @@ load_dotenv()
 
 LLM_API_URL = os.getenv("LLM_API_URL", "")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
+
+# Rate limiting
+MIN_CALL_INTERVAL = float(os.getenv("MIN_CALL_INTERVAL", "2.0"))
+_last_call_time = 0.0
 
 
 def slider_to_temp(slider: int) -> float:
@@ -22,6 +27,16 @@ def slider_to_temp(slider: int) -> float:
 
 def expand_prompt(idea: str, slider: int = 5) -> List[Dict]:
     """Запрос к LLM для расширения идеи в несколько вариантов промптов."""
+    global _last_call_time
+
+    # Rate limiting
+    current_time = time.time()
+    time_since_last_call = current_time - _last_call_time
+    if time_since_last_call < MIN_CALL_INTERVAL:
+        wait_time = MIN_CALL_INTERVAL - time_since_last_call
+        time.sleep(wait_time)
+    _last_call_time = time.time()
+
     temperature = slider_to_temp(slider)
     payload = {
         "model": "deepseek/deepseek-chat-v3-0324:free",

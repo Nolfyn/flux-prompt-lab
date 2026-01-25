@@ -108,44 +108,25 @@ def switch_language_handler(current_lang: str):
     """Простое переключение языка — возвращает обновления для компонентов."""
     new_lang = "en" if current_lang == "ru" else "ru"
     t = TEXTS[new_lang]
-    updates = {
-        "title": gr.update(value=t["title"]),
-        "idea_label": gr.update(label=t["idea_label"], placeholder=t["idea_placeholder"]),
-        "slider_label": gr.update(label=t["slider_label"]),
-        "generate_label": gr.update(value=t["generate"]),
-        "creative_label": gr.update(value=t["creative"]),
-        "save_name_label": gr.update(label=t["save_name"], placeholder=""),
-        "save_btn_label": gr.update(value=t["save_btn"]),
-        "extended_prompt_label": gr.update(label=t["extended_prompt"]),
-        "saved_prompts_label": gr.update(label=t["saved_prompts"]),
-        "saved_prompts_title_label": gr.update(label=t["saved_prompts_title"]),
-        "load_btn_label": gr.update(value=t["load_btn"]),
-        "refresh_btn_label": gr.update(value=t["refresh_btn"]),
-        "delete_btn_label": gr.update(value=t["delete_btn"]),
-        "prompt_editor_label": gr.update(label=t["prompt_editor"]),
-        "status_label": gr.update(label=t["status"]),
-        "copy_html": gr.update(value=t["copy_button_html"]),
-        "lang_button": gr.update(value=t["switch_lang"]),
-    }
     return (
         new_lang,
-        updates["title"],
-        updates["idea_label"],
-        updates["slider_label"],
-        updates["generate_label"],
-        updates["creative_label"],
-        updates["save_name_label"],
-        updates["save_btn_label"],
-        updates["extended_prompt_label"],
-        updates["saved_prompts_label"],
-        updates["saved_prompts_title_label"],
-        updates["load_btn_label"],
-        updates["refresh_btn_label"],
-        updates["delete_btn_label"],
-        updates["prompt_editor_label"],
-        updates["status_label"],
-        updates["copy_html"],
-        updates["lang_button"],
+        gr.update(value=t["title"]),
+        gr.update(label=t["idea_label"], placeholder=t["idea_placeholder"]),
+        gr.update(label=t["slider_label"]),
+        gr.update(value=t["generate"]),
+        gr.update(value=t["creative"]),
+        gr.update(label=t["save_name"], placeholder=""),
+        gr.update(value=t["save_btn"]),  # save_btn
+        gr.update(value="### " + t["saved_prompts_title"]),
+        gr.update(label=t["saved_prompts"]),
+        gr.update(value=t["load_btn"]),
+        gr.update(value=t["refresh_btn"]),
+        gr.update(value=t["delete_btn"]),
+        gr.update(value="### " + t["extended_prompt"]),
+        gr.update(label=t["prompt_editor"]),
+        gr.update(label=t["status"]),
+        gr.update(value=t["copy_button_html"]),
+        gr.update(value=t["switch_lang"]),
     )
 
 
@@ -181,7 +162,7 @@ with gr.Blocks() as demo:
             save_btn = gr.Button(txt["save_btn"])
 
             # блок сохранённых записей
-            gr.Markdown("### " + txt["saved_prompts_title"])
+            saved_prompts_title_md = gr.Markdown("### " + txt["saved_prompts_title"])
             saved_dropdown = gr.Dropdown(
                 label=txt["saved_prompts"], choices=[], interactive=True
             )
@@ -194,7 +175,7 @@ with gr.Blocks() as demo:
             lang_btn = gr.Button(txt["switch_lang"])
 
         with gr.Column(scale=3):
-            gr.Markdown("### " + txt["extended_prompt"])
+            extended_prompt_md = gr.Markdown("### " + txt["extended_prompt"])
             prompt_editor = gr.Textbox(
                 label=txt["prompt_editor"], lines=8, elem_id="prompt_editor"
             )
@@ -257,10 +238,12 @@ with gr.Blocks() as demo:
             creative_btn,
             save_name,
             save_btn,
+            saved_prompts_title_md,
             saved_dropdown,
             load_btn,
             refresh_btn,
             delete_btn,
+            extended_prompt_md,
             prompt_editor,
             status,
             copy_html,
