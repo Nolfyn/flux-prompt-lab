@@ -16,7 +16,26 @@ TEXTS = {
         "delete_btn": "Удалить",
         "prompt_editor": "Промпт (редактируемый)",
         "status": "Статус",
-        "copy_button_html": " <button onclick=\"navigator.clipboard.writeText(document.getElementById('prompt_editor').value)\">Копировать</button> ",
+        "copy_button_html": (
+            " <button onclick=\"(function(){"
+            "let textarea=document.querySelector('#prompt_editor textarea')"
+            "||document.querySelector('#prompt_editor');"
+            "if(!textarea){"
+            "const btn=event.target;"
+            "let parent=btn.parentElement;"
+            "while(parent&&!textarea){"
+            "textarea=parent.querySelector('textarea[rows=\\'8\\']')"
+            "||parent.querySelector('textarea');"
+            "parent=parent.parentElement;"
+            "}"
+            "}"
+            "if(!textarea){"
+            "const all=document.querySelectorAll('textarea');"
+            "textarea=all[all.length-2]||all[all.length-1];"
+            "}"
+            "if(textarea)navigator.clipboard.writeText(textarea.value||'');"
+            "})()\">Копировать</button> "
+        ),
         "switch_lang": "EN",
     },
     "en": {
@@ -36,7 +55,26 @@ TEXTS = {
         "delete_btn": "Delete",
         "prompt_editor": "Prompt (editable)",
         "status": "Status",
-        "copy_button_html": " <button onclick=\"navigator.clipboard.writeText(document.getElementById('prompt_editor').value)\">Copy</button> ",
+        "copy_button_html": (
+            " <button onclick=\"(function(){"
+            "let textarea=document.querySelector('#prompt_editor textarea')"
+            "||document.querySelector('#prompt_editor');"
+            "if(!textarea){"
+            "const btn=event.target;"
+            "let parent=btn.parentElement;"
+            "while(parent&&!textarea){"
+            "textarea=parent.querySelector('textarea[rows=\\'8\\']')"
+            "||parent.querySelector('textarea');"
+            "parent=parent.parentElement;"
+            "}"
+            "}"
+            "if(!textarea){"
+            "const all=document.querySelectorAll('textarea');"
+            "textarea=all[all.length-2]||all[all.length-1];"
+            "}"
+            "if(textarea)navigator.clipboard.writeText(textarea.value||'');"
+            "})()\">Copy</button> "
+        ),
         "switch_lang": "RU",
     },
 }
