@@ -39,11 +39,16 @@ def expand_prompt(idea: str, slider: int = 5) -> List[Dict]:
 
     temperature = slider_to_temp(slider)
     payload = {
-        "model": "deepseek/deepseek-chat-v3-0324:free",
-        "prompt": (
-            f"Expand the following idea into three different, descriptive,\n"
-            f"real-language style prompts for Stable Diffusion: {idea}"
-        ),
+        "model": "deepseek/deepseek-r1-0528:free",
+        "messages": [
+            {
+                "role": "user",
+                "content": (
+                    f"Expand the following idea into three different, descriptive,\n"
+                    f"real-language style prompts for Stable Diffusion: {idea}"
+                ),
+            }
+        ],
         "temperature": temperature,
         "max_tokens": 400,
     }
@@ -57,6 +62,17 @@ def expand_prompt(idea: str, slider: int = 5) -> List[Dict]:
                                  timeout=15)
         response.raise_for_status()
         result = response.json()
+        
+        # OpenRouter returns OpenAI-compatible format with 'choices' array
+        if isinstance(result, dict) and "choices" in result:
+            choices = result["choices"]
+            if choices and len(choices) > 0:
+                # Extract content from the first choice
+                content = choices[0].get("message", {}).get("content", "")
+                # Return as a list with a dict to match expected format
+                return [{"prompt": content}] if content else []
+        
+        # Fallback for other formats
         return result if isinstance(result, list) else []
     except requests.exceptions.RequestException as e:
         print(f"Ошибка запроса к LLM: {e}")

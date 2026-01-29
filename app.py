@@ -27,18 +27,39 @@ def generate_handler(idea: str, slider: int):
     try:
         variants = llm_adapter.expand_prompt(idea or "", slider) or []
         if not variants:
-            return "", "Пустой ответ от LLM"
+            return (
+                "",
+                "Пустой ответ от LLM",
+                gr.update(interactive=True),  # generate_btn
+                gr.update(interactive=True),  # creative_btn
+                gr.update(interactive=True),  # idea_input
+                gr.update(interactive=True),  # slider
+            )
         first = variants[0]
         prompt_text = (
             first.get("prompt") if isinstance(first, dict) else str(first)
         )
         prompt_text = (prompt_text or "").strip()
-        return prompt_text, "OK"
+        return (
+            prompt_text,
+            "Done",
+            gr.update(interactive=True),  # generate_btn
+            gr.update(interactive=True),  # creative_btn
+            gr.update(interactive=True),  # idea_input
+            gr.update(interactive=True),  # slider
+        )
     except Exception as e:
-        return "", f"Ошибка: {e}"
+        return (
+            "",
+            f"Error: {e}",
+            gr.update(interactive=True),  # generate_btn
+            gr.update(interactive=True),  # creative_btn
+            gr.update(interactive=True),  # idea_input
+            gr.update(interactive=True),  # slider
+        )
 
 
-def generate_random_handler(slider: int) -> Tuple[str, str]:
+def generate_random_handler(slider: int):
     """Вызов expand_prompt для рандомного результата."""
     idea = "A detailed and imaginative landscape of your choice."
     return generate_handler(idea, slider)
@@ -116,7 +137,7 @@ def switch_language_handler(current_lang: str):
         gr.update(value=t["generate"]),
         gr.update(value=t["creative"]),
         gr.update(label=t["save_name"], placeholder=""),
-        gr.update(value=t["save_btn"]),  # save_btn
+        gr.update(value=t["save_btn"]),
         gr.update(value="### " + t["saved_prompts_title"]),
         gr.update(label=t["saved_prompts"]),
         gr.update(value=t["load_btn"]),
@@ -184,17 +205,62 @@ with gr.Blocks() as demo:
 
     # --- Привязки ---
     # Генерировать (основная кнопка)
+    def generate_with_loading(idea: str, slider: int):
+        """Wrapper для генерации с отключением контролов."""
+        # Отключаем контролы
+        yield (
+            "",
+            "Generating",
+            gr.update(interactive=False),  # generate_btn
+            gr.update(interactive=False),  # creative_btn
+            gr.update(interactive=False),  # idea_input
+            gr.update(interactive=False),  # slider
+        )
+        # Выполняем генерацию
+        result = generate_handler(idea, slider)
+        yield result
+
     generate_btn.click(
-        fn=generate_handler,
+        fn=generate_with_loading,
         inputs=[idea_input, slider],
-        outputs=[prompt_editor, status],
+        outputs=[
+            prompt_editor,
+            status,
+            generate_btn,
+            creative_btn,
+            idea_input,
+            slider,
+        ],
     )
 
     # Кнопка "Креатив"
+    def generate_random_with_loading(slider: int):
+        """Wrapper для случайной генерации с отключением контролов."""
+        idea = "A detailed and imaginative landscape of your choice."
+        # Отключаем контролы
+        yield (
+            "",
+            "Generating",
+            gr.update(interactive=False),  # generate_btn
+            gr.update(interactive=False),  # creative_btn
+            gr.update(interactive=False),  # idea_input
+            gr.update(interactive=False),  # slider
+        )
+        # Выполняем генерацию
+        result = generate_handler(idea, slider)
+        yield result
+
     creative_btn.click(
-        fn=generate_random_handler,
+        fn=generate_random_with_loading,
         inputs=[slider],
-        outputs=[prompt_editor, status],
+        outputs=[
+            prompt_editor,
+            status,
+            generate_btn,
+            creative_btn,
+            idea_input,
+            slider,
+        ],
     )
 
     # Сохранение — возвращает статус и обновляет список сохранённых
