@@ -12,14 +12,21 @@ def _build_saved_choices() -> Tuple[List[str], Dict[str, str]]:
       - список display-строк для Dropdown (["Name (id1234)", ...])
       - map display -> id
     """
-    rows = storage.list_prompts(limit=200)
-    choices = []
-    mapping = {}
-    for r in rows:
-        display = f"{r.get('name') or 'untitled'} ({r.get('id')[:8]})"
-        choices.append(display)
-        mapping[display] = r.get("id")
-    return choices, mapping
+    try:
+        rows = storage.list_prompts(limit=200)
+        choices = []
+        mapping = {}
+        for r in rows:
+            record_id = r.get("id")
+            if not record_id:
+                continue
+            display = f"{r.get('name') or 'untitled'} ({record_id[:8]})"
+            choices.append(display)
+            mapping[display] = record_id
+        return choices, mapping
+    except Exception as e:
+        print(f"Error in _build_saved_choices: {e}")
+        return [], {}
 
 
 def generate_handler(idea: str, slider: int):
@@ -67,10 +74,11 @@ def generate_random_handler(slider: int):
 
 def save_prompt_handler(
     prompt_text: str, name: str
-) -> Tuple[str, List[str], Dict[str, str]]:
+) -> Tuple[str, gr.update, Dict[str, str]]:
     """Сохраняет промпт через storage.save_prompt."""
     if not prompt_text or not prompt_text.strip():
-        return "Нечего сохранять", [], {}
+        choices, mapping = _build_saved_choices()
+        return "Нечего сохранять", gr.update(choices=choices), mapping
     record = {
         "name": name or "untitled",
         "prompt": prompt_text,
@@ -78,15 +86,20 @@ def save_prompt_handler(
     try:
         rid = storage.save_prompt(record)
     except Exception as e:
-        return f"Ошибка сохранения: {e}", [], {}
+        choices, mapping = _build_saved_choices()
+        return f"Ошибка сохранения: {e}", gr.update(choices=choices), mapping
     choices, mapping = _build_saved_choices()
-    return f"Сохранено: {rid}", choices, mapping
+    return f"Сохранено: {rid}", gr.update(choices=choices), mapping
 
 
-def refresh_saved_handler() -> Tuple[List[str], Dict[str, str]]:
+def refresh_saved_handler() -> Tuple[gr.update, Dict[str, str]]:
     """Обновить список сохранённых записей."""
-    choices, mapping = _build_saved_choices()
-    return choices, mapping
+    try:
+        choices, mapping = _build_saved_choices()
+        return gr.update(choices=choices), mapping
+    except Exception as e:
+        print(f"Error in refresh_saved_handler: {e}")
+        return gr.update(choices=[]), {}
 
 
 def load_saved_handler(
@@ -106,23 +119,30 @@ def load_saved_handler(
 
 def delete_saved_handler(
     selected_display: str, mapping: Dict[str, str]
-) -> Tuple[str, List[str], Dict[str, str], str]:
+) -> Tuple[str, gr.update, Dict[str, str], str]:
     """
     Удалить выбранную запись. Возвращаем (status, new_choices, new_mapping,
     cleared_editor). cleared_editor — пустая строка, чтобы очистить редактор,
     если нужно.
     """
     if not selected_display:
-        return "Ничего не выбрано", [], {}, ""
+        choices, mapping = _build_saved_choices()
+        return "Ничего не выбрано", gr.update(choices=choices), mapping, ""
     rid = mapping.get(selected_display)
     if not rid:
-        return "Не удалось найти id", [], {}, ""
-    ok = storage.delete_prompt(rid)
-    if not ok:
-        return "Удаление не удалось", [], {}, ""
-    # обновим список
-    choices, mapping = _build_saved_choices()
-    return "Удалено", choices, mapping, ""
+        choices, mapping = _build_saved_choices()
+        return "Не удалось найти id", gr.update(choices=choices), mapping, ""
+    try:
+        ok = storage.delete_prompt(rid)
+        if not ok:
+            choices, mapping = _build_saved_choices()
+            return "Удаление не удалось", gr.update(choices=choices), mapping, ""
+        # обновим список
+        choices, mapping = _build_saved_choices()
+        return "Удалено", gr.update(choices=choices), mapping, ""
+    except Exception as e:
+        choices, mapping = _build_saved_choices()
+        return f"Ошибка удаления: {e}", gr.update(choices=choices), mapping, ""
 
 
 def switch_language_handler(current_lang: str):
@@ -154,7 +174,9 @@ def switch_language_handler(current_lang: str):
 # --- Gradio UI ---
 with gr.Blocks() as demo:
     lang_state = gr.State("ru")
-    saved_map_state = gr.State({})
+    # Initialize saved_map_state with initial mapping
+    initial_choices, initial_mapping = _build_saved_choices()
+    saved_map_state = gr.State(initial_mapping)
 
     txt = TEXTS["ru"]
 
@@ -185,7 +207,9 @@ with gr.Blocks() as demo:
             # блок сохранённых записей
             saved_prompts_title_md = gr.Markdown("### " + txt["saved_prompts_title"])
             saved_dropdown = gr.Dropdown(
-                label=txt["saved_prompts"], choices=[], interactive=True
+                label=txt["saved_prompts"],
+                choices=initial_choices,
+                interactive=True,
             )
             with gr.Row():
                 load_btn = gr.Button(txt["load_btn"])
