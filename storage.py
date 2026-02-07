@@ -132,7 +132,9 @@ def delete_prompt(record_id):
     """Удалить запись по id."""
     try:
         conn = _conn()
-        cur = conn.execute("DELETE FROM saved_prompts WHERE id = ?", (record_id,))
+        cur = conn.execute(
+            "DELETE FROM saved_prompts WHERE id = ?", (record_id,)
+        )
         conn.commit()
         conn.close()
         return cur.rowcount > 0

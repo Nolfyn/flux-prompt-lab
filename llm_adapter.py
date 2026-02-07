@@ -8,6 +8,7 @@ load_dotenv()
 
 LLM_API_URL = os.getenv("LLM_API_URL", "")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
+MODEL = os.getenv("MODEL", "")
 
 # Rate limiting
 MIN_CALL_INTERVAL = float(os.getenv("MIN_CALL_INTERVAL", "2.0"))
@@ -29,7 +30,7 @@ def expand_prompt(idea: str, slider: int = 5) -> List[Dict]:
     """Запрос к LLM для расширения идеи в несколько вариантов промптов."""
     global _last_call_time
 
-    # Validate input
+    # Проверка входящей идеи
     if not idea or not idea.strip():
         print("Warning: Empty or whitespace-only idea provided")
         return []
@@ -43,17 +44,18 @@ def expand_prompt(idea: str, slider: int = 5) -> List[Dict]:
     _last_call_time = time.time()
 
     temperature = slider_to_temp(slider)
-    # Strip the idea to ensure clean input
     idea = idea.strip()
     payload = {
-        "model": "deepseek/deepseek-r1-0528:free",
+        "model": MODEL,
         "messages": [
             {
                 "role": "user",
                 "content": (
-                    f"Expand the following idea into three different, descriptive, long,\n"
-                    f"real-language style prompts for Stable Diffusion (Flux model): {idea}.\n"
-                    f"Only offer the three prompts in your response, without any other text."
+                    f"Expand the following idea into three different,\n"
+                    f"descriptive, long, real-language style prompts\n"
+                    f"for Stable Diffusion (Flux model): {idea}.\n"
+                    f"Only offer the three prompts in your response,\n"
+                    f"without any other text."
                 ),
             }
         ],
@@ -66,52 +68,51 @@ def expand_prompt(idea: str, slider: int = 5) -> List[Dict]:
     }
 
     try:
-        response = requests.post(LLM_API_URL, json=payload, headers=headers,
-                                 timeout=15)
+        response = requests.post(
+            LLM_API_URL, json=payload, headers=headers, timeout=15
+        )
         response.raise_for_status()
         result = response.json()
-        
-        # OpenRouter returns OpenAI-compatible format with 'choices' array
+
         if isinstance(result, dict) and "choices" in result:
             choices = result["choices"]
             if choices and len(choices) > 0:
-                # Extract content from the first choice
                 message = choices[0].get("message", {})
                 content = message.get("content", "")
-                
-                # Check for finish_reason to see if response was cut off
+
+                # Проверка на урезанный ответ
                 finish_reason = choices[0].get("finish_reason", "")
                 if finish_reason == "length":
                     print("Warning: Response was truncated due to token limit")
-                
-                # Strip whitespace and check if content is actually present
+
                 content = content.strip() if content else ""
                 if content:
-                    # Return as a list with a dict to match expected format
                     return [{"prompt": content}]
                 else:
-                    print(f"Warning: Empty content in response. Finish reason: {finish_reason}")
+                    print(
+                        f"Warning: Empty content in response.\n"
+                        f"Finish reason: {finish_reason}"
+                    )
                     print(f"Response structure: {result}")
                     return []
             else:
                 print(f"Warning: Empty choices array in response: {result}")
                 return []
-        
-        # Fallback for other formats
+
         if isinstance(result, list):
             return result
-        
-        # If we get here, the response format is unexpected
+
+        # Блок для неожиданного формата ответа
         print(f"Warning: Unexpected response format: {type(result)}")
         print(f"Response: {result}")
         return []
     except requests.exceptions.RequestException as e:
         print(f"Ошибка запроса к LLM: {e}")
-        if hasattr(e, 'response') and e.response is not None:
+        if hasattr(e, "response") and e.response is not None:
             try:
                 error_detail = e.response.json()
                 print(f"Error details: {error_detail}")
-            except:
+            except Exception:
                 print(f"Error response text: {e.response.text}")
         return []
     except Exception as e:
