@@ -36,7 +36,7 @@ def generate_handler(idea: str, slider: int):
         if not variants:
             return (
                 "",
-                "Пустой ответ от LLM",
+                "Empty LLM response",
                 gr.update(interactive=True),  # generate_btn
                 gr.update(interactive=True),  # creative_btn
                 gr.update(interactive=True),  # idea_input
@@ -67,7 +67,7 @@ def generate_handler(idea: str, slider: int):
 
 
 def generate_random_handler(slider: int):
-    """Вызов expand_prompt для рандомного результата."""
+    """Вызов expand_prompt для получения случайного пейзажа."""
     idea = "A detailed and imaginative landscape of your choice."
     return generate_handler(idea, slider)
 
@@ -136,8 +136,12 @@ def delete_saved_handler(
         ok = storage.delete_prompt(rid)
         if not ok:
             choices, mapping = _build_saved_choices()
-            return "Удаление не удалось", gr.update(choices=choices), mapping, ""
-        # обновим список
+            return (
+                "Удаление не удалось",
+                gr.update(choices=choices),
+                mapping,
+                "",
+            )
         choices, mapping = _build_saved_choices()
         return "Удалено", gr.update(choices=choices), mapping, ""
     except Exception as e:
@@ -146,7 +150,7 @@ def delete_saved_handler(
 
 
 def switch_language_handler(current_lang: str):
-    """Простое переключение языка — возвращает обновления для компонентов."""
+    """Переключение языка — возвращает обновления для компонентов."""
     new_lang = "en" if current_lang == "ru" else "ru"
     t = TEXTS[new_lang]
     return (
@@ -205,7 +209,9 @@ with gr.Blocks() as demo:
             save_btn = gr.Button(txt["save_btn"])
 
             # блок сохранённых записей
-            saved_prompts_title_md = gr.Markdown("### " + txt["saved_prompts_title"])
+            saved_prompts_title_md = gr.Markdown(
+                "### " + txt["saved_prompts_title"]
+            )
             saved_dropdown = gr.Dropdown(
                 label=txt["saved_prompts"],
                 choices=initial_choices,
@@ -230,8 +236,7 @@ with gr.Blocks() as demo:
     # --- Привязки ---
     # Генерировать (основная кнопка)
     def generate_with_loading(idea: str, slider: int):
-        """Wrapper для генерации с отключением контролов."""
-        # Отключаем контролы
+        """Обертка для генерации (с отключением элементов управления)."""
         yield (
             "",
             "Generating",
@@ -240,7 +245,6 @@ with gr.Blocks() as demo:
             gr.update(interactive=False),  # idea_input
             gr.update(interactive=False),  # slider
         )
-        # Выполняем генерацию
         result = generate_handler(idea, slider)
         yield result
 
@@ -259,9 +263,10 @@ with gr.Blocks() as demo:
 
     # Кнопка "Креатив"
     def generate_random_with_loading(slider: int):
-        """Wrapper для случайной генерации с отключением контролов."""
+        """
+        Обертка для случайной генерации (с отключением элементов управления).
+        """
         idea = "A detailed and imaginative landscape of your choice."
-        # Отключаем контролы
         yield (
             "",
             "Generating",
@@ -315,7 +320,7 @@ with gr.Blocks() as demo:
         outputs=[status, saved_dropdown, saved_map_state, prompt_editor],
     )
 
-    # Переключение языка (возвращаем много обновлений)
+    # Переключение языка (возвращаем обновления)
     lang_btn.click(
         fn=switch_language_handler,
         inputs=[lang_state],
